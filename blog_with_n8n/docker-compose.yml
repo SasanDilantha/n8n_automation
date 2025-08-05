@@ -14,13 +14,17 @@ services:
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
       - N8N_BASIC_AUTH_PASSWORD=admin123
-      - N8N_HOST=localhost
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - WEBHOOK_URL=http://localhost:5678
       - N8N_SECURE_COOKIE=false # For local development
+      - WEBHOOK_URL=https://${NGROK_DOMAIN}
+      - N8N_EDITOR_BASE_URL=https://${NGROK_DOMAIN}
+      - N8N_RUNNERS_ENABLED=true
     volumes:
       - ../n8n_data:/home/node/.n8n
+    depends_on:
+      - n8n-db
+      - ngrok
+    networks:
+      - n8n-network
 
   n8n-db:
     image: postgres:14
@@ -32,7 +36,24 @@ services:
       - POSTGRES_DB=n8n
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - n8n-network
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok_local
+    restart: unless-stopped
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTH_TOKEN}
+      - NGROK_DOMAIN=${NGROK_DOMAIN}
+    command: ["http", "n8n:5678", "--domain=${NGROK_DOMAIN}"] # Replace with your domain if needed
+    networks:
+      - n8n-network
 
 volumes:
   n8n_data:
   postgres_data:
+
+networks:
+  n8n-network:
+    driver: bridge
