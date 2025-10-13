@@ -1,2 +1,4 @@
 .env
 blog_with_n8n/.env
+
+psqldata.txt
